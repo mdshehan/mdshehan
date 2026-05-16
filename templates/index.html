@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FB Reels & Video Downloader</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+    <main class="container">
+        <header>
+            <h1>Facebook Reels & Video Downloader</h1>
+            <p class="subtitle">
+                Paste a Facebook video, Reel, or Watch link. The download comes straight
+                from Facebook's CDN — your video never passes through this server.
+            </p>
+        </header>
+
+        <form id="form" class="card" autocomplete="off">
+            <label for="url" class="sr-only">Facebook URL</label>
+            <div class="input-row">
+                <input
+                    id="url"
+                    name="url"
+                    type="url"
+                    placeholder="https://www.facebook.com/reel/..."
+                    required
+                />
+                <button id="submit" type="submit">Fetch</button>
+            </div>
+            <p id="status" class="status" role="status" aria-live="polite"></p>
+        </form>
+
+        <section id="result" class="result hidden" aria-live="polite"></section>
+
+        <footer>
+            <p>
+                For personal use only. Respect the original creator's rights and
+                Facebook's Terms of Service.
+            </p>
+        </footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
