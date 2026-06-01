@@ -7,9 +7,12 @@ and Watch posts.
   extracts the HD/SD video URLs (`hd_src`, `sd_src`,
   `browser_native_hd_url`, etc.).
 - **Frontend**: Vanilla HTML / CSS / JavaScript.
-- **No proxy**: the backend only returns the direct `*.fbcdn.net` URLs.
-  The browser downloads the video straight from Facebook's CDN — no bytes
-  flow through this server.
+- **Streaming download**: the backend streams the video bytes from
+  Facebook's CDN through to the browser with a
+  `Content-Disposition: attachment` header, so files actually download
+  instead of opening in a new tab. The server doesn't store anything to
+  disk — it just pipes the chunks through. The proxy only allows
+  `*.fbcdn.net` upstream URLs.
 
 ## Setup
 

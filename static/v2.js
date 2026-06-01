@@ -69,11 +69,16 @@
         }
 
         const d = res.data;
+        const proxy = (u, name) => `/download?url=${encodeURIComponent(u)}&filename=${encodeURIComponent(name)}`;
         const links = [];
-        if (d.hd_url) links.push(`<a href="${escapeHtml(d.hd_url)}" target="_blank" rel="noopener noreferrer"
-            download="${escapeHtml(buildFilename(d.title, "HD", idx))}"><span class="q">HD</span>.mp4</a>`);
-        if (d.sd_url) links.push(`<a href="${escapeHtml(d.sd_url)}" target="_blank" rel="noopener noreferrer"
-            download="${escapeHtml(buildFilename(d.title, "SD", idx))}"><span class="q">SD</span>.mp4</a>`);
+        if (d.hd_url) {
+            const fn = buildFilename(d.title, "HD", idx);
+            links.push(`<a href="${escapeHtml(proxy(d.hd_url, fn))}" download="${escapeHtml(fn)}"><span class="q">HD</span>.mp4</a>`);
+        }
+        if (d.sd_url) {
+            const fn = buildFilename(d.title, "SD", idx);
+            links.push(`<a href="${escapeHtml(proxy(d.sd_url, fn))}" download="${escapeHtml(fn)}"><span class="q">SD</span>.mp4</a>`);
+        }
 
         node.className = "item success";
         node.innerHTML = `
@@ -98,11 +103,10 @@
         items.forEach(({ r, i }, n) => {
             setTimeout(() => {
                 const url = quality === "hd" ? r.data.hd_url : r.data.sd_url;
+                const fn = buildFilename(r.data.title, quality.toUpperCase(), i);
                 const a = document.createElement("a");
-                a.href = url;
-                a.download = buildFilename(r.data.title, quality.toUpperCase(), i);
-                a.target = "_blank";
-                a.rel = "noopener noreferrer";
+                a.href = `/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(fn)}`;
+                a.download = fn;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();

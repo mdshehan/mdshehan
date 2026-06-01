@@ -36,16 +36,17 @@
             ? `<img src="${escapeHtml(data.thumbnail)}" alt="thumbnail" referrerpolicy="no-referrer" />`
             : "";
 
-        const linksHtml = links.map((l) => `
+        const linksHtml = links.map((l) => {
+            const filename = buildFilename(data.title, l.quality);
+            const proxied = `/download?url=${encodeURIComponent(l.url)}&filename=${encodeURIComponent(filename)}`;
+            return `
             <a class="download-link"
-               href="${escapeHtml(l.url)}"
-               target="_blank"
-               rel="noopener noreferrer"
-               download="${escapeHtml(buildFilename(data.title, l.quality))}">
+               href="${escapeHtml(proxied)}"
+               download="${escapeHtml(filename)}">
                 <span><span class="quality">${l.quality}</span> &nbsp;Download .mp4</span>
                 <span class="arrow">&darr;</span>
             </a>
-        `).join("");
+        `;}).join("");
 
         result.innerHTML = `
             <div class="preview">
@@ -57,9 +58,8 @@
             </div>
             <div class="downloads">${linksHtml}</div>
             <p class="hint">
-                Tip: if a link opens the video in a new tab instead of downloading,
-                right-click it and choose <em>"Save link as…"</em>. The file is served
-                directly by Facebook's CDN (fbcdn.net) — no proxy.
+                Downloads stream through this server so your browser saves the file
+                instead of opening it in a new tab.
             </p>
         `;
         result.classList.remove("hidden");

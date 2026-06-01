@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
 import requests
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, abort, jsonify, render_template, request, stream_with_context
 
 app = Flask(__name__)
 
@@ -176,6 +176,58 @@ def api_extract():
         status = 400 if result["error"].startswith(("Please", "URL must")) else 502
         return jsonify({"ok": False, "error": result["error"]}), status
     return jsonify({"ok": True, "data": result["data"]})
+
+
+def _is_fbcdn(url: str) -> bool:
+    try:
+        host = (urlparse(url).hostname or "").lower()
+    except Exception:
+        return False
+    return host.endswith(".fbcdn.net") or host == "fbcdn.net"
+
+
+def _safe_filename(name: str, default: str = "facebook-video.mp4") -> str:
+    if not name:
+        return default
+    name = re.sub(r"[\\/:*?\"<>|\r\n\t]+", "", name).strip()
+    if not name.lower().endswith(".mp4"):
+        name += ".mp4"
+    return (name[:120]) or default
+
+
+@app.route("/download")
+def download():
+    url = request.args.get("url", "").strip()
+    filename = _safe_filename(request.args.get("filename", ""))
+
+    if not url or not url.startswith(("http://", "https://")) or not _is_fbcdn(url):
+        abort(400, "Only fbcdn.net URLs are allowed.")
+
+    try:
+        upstream = requests.get(url, stream=True, headers=DESKTOP_HEADERS, timeout=30)
+    except requests.RequestException:
+        abort(502, "Could not reach Facebook's CDN.")
+    if not upstream.ok:
+        upstream.close()
+        abort(upstream.status_code, "Upstream fetch failed.")
+
+    def generate():
+        try:
+            for chunk in upstream.iter_content(chunk_size=64 * 1024):
+                if chunk:
+                    yield chunk
+        finally:
+            upstream.close()
+
+    headers = {
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Content-Type": upstream.headers.get("Content-Type", "video/mp4"),
+    }
+    length = upstream.headers.get("Content-Length")
+    if length:
+        headers["Content-Length"] = length
+
+    return Response(stream_with_context(generate()), headers=headers)
 
 
 @app.route("/api/extract-batch", methods=["POST"])
