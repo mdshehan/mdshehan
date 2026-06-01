@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FB Batch Downloader (v2)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='v2.css') }}" />
+</head>
+<body>
+    <main class="container container-wide">
+        <header>
+            <h1>FB Batch Downloader <span class="badge">v2</span></h1>
+            <p class="subtitle">
+                Paste one Facebook URL per line. Up to 20 at once. Each video is
+                fetched in parallel and downloads come straight from Facebook's CDN.
+            </p>
+            <p class="subtitle">
+                <a href="/" class="link">&larr; back to single-link version</a>
+            </p>
+        </header>
+
+        <form id="form" class="card" autocomplete="off">
+            <label for="urls" class="sr-only">Facebook URLs</label>
+            <textarea
+                id="urls"
+                name="urls"
+                rows="6"
+                placeholder="https://www.facebook.com/reel/123...&#10;https://fb.watch/abc...&#10;https://www.facebook.com/watch?v=456..."
+                required
+            ></textarea>
+
+            <div class="toolbar">
+                <div class="counter"><span id="count">0</span> link(s)</div>
+                <div class="actions">
+                    <button id="clear" type="button" class="btn-ghost">Clear</button>
+                    <button id="submit" type="submit">Fetch all</button>
+                </div>
+            </div>
+
+            <div id="progress-wrap" class="progress-wrap hidden">
+                <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+                <div id="progress-text" class="progress-text"></div>
+            </div>
+        </form>
+
+        <div class="batch-actions hidden" id="batch-actions">
+            <button id="download-all-hd" type="button">Download all HD</button>
+            <button id="download-all-sd" type="button" class="btn-ghost">Download all SD</button>
+            <span id="batch-summary" class="batch-summary"></span>
+        </div>
+
+        <section id="results" class="results"></section>
+
+        <footer>
+            <p>For personal use only. Respect creators' rights and Facebook's Terms of Service.</p>
+        </footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='v2.js') }}"></script>
+</body>
+</html>

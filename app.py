@@ -1,6 +1,7 @@
 import html
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
 import requests
@@ -136,30 +137,61 @@ def fetch_video(url: str):
     return None, "; ".join(errors) or "Could not locate any video stream in the page."
 
 
+def normalize_and_validate(url: str):
+    url = (url or "").strip()
+    if not url:
+        return None, "Please paste a Facebook video or reel URL."
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    if not is_facebook_url(url):
+        return None, "URL must be from facebook.com, fb.watch or fb.com."
+    return url, None
+
+
+def extract_one(url: str):
+    cleaned, err = normalize_and_validate(url)
+    if err:
+        return {"ok": False, "input": url, "error": err}
+    data, ferr = fetch_video(cleaned)
+    if not data:
+        return {"ok": False, "input": url, "error": ferr}
+    return {"ok": True, "input": url, "data": data}
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
 
+@app.route("/v2")
+def v2():
+    return render_template("v2.html")
+
+
 @app.route("/api/extract", methods=["POST"])
 def api_extract():
     payload = request.get_json(silent=True) or {}
-    url = (payload.get("url") or "").strip()
+    result = extract_one(payload.get("url") or "")
+    if not result["ok"]:
+        status = 400 if result["error"].startswith(("Please", "URL must")) else 502
+        return jsonify({"ok": False, "error": result["error"]}), status
+    return jsonify({"ok": True, "data": result["data"]})
 
-    if not url:
-        return jsonify({"ok": False, "error": "Please paste a Facebook video or reel URL."}), 400
 
-    if not url.startswith(("http://", "https://")):
-        url = "https://" + url
+@app.route("/api/extract-batch", methods=["POST"])
+def api_extract_batch():
+    payload = request.get_json(silent=True) or {}
+    urls = payload.get("urls") or []
+    if not isinstance(urls, list) or not urls:
+        return jsonify({"ok": False, "error": "Provide a non-empty `urls` array."}), 400
+    urls = [u for u in (str(x).strip() for x in urls) if u][:20]
+    if not urls:
+        return jsonify({"ok": False, "error": "No usable URLs after trimming."}), 400
 
-    if not is_facebook_url(url):
-        return jsonify({"ok": False, "error": "URL must be from facebook.com, fb.watch or fb.com."}), 400
+    with ThreadPoolExecutor(max_workers=min(5, len(urls))) as pool:
+        results = list(pool.map(extract_one, urls))
 
-    data, err = fetch_video(url)
-    if not data:
-        return jsonify({"ok": False, "error": err}), 502
-
-    return jsonify({"ok": True, "data": data})
+    return jsonify({"ok": True, "results": results})
 
 
 if __name__ == "__main__":

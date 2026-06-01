@@ -21,6 +21,20 @@ python app.py
 Open `http://localhost:5000` in your browser, paste a public Facebook video
 or Reel URL, click **Fetch**, then click an HD/SD link to download.
 
+### Batch mode (`/v2`)
+
+Visit `/v2` for the batch UI: paste up to 20 URLs (one per line), get a
+parallel fetch with a progress bar, and use **Download all HD / SD** to
+trigger every download at once.
+
+Batch API:
+
+```bash
+curl -X POST http://localhost:5000/api/extract-batch \
+  -H 'Content-Type: application/json' \
+  -d '{"urls":["https://fb.watch/abc...","https://www.facebook.com/reel/123..."]}'
+```
+
 ## Deploy to Render
 
 This repo is wired up for [Render](https://render.com) (free tier works).
