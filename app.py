@@ -2,7 +2,7 @@ import html
 import json
 import re
 from concurrent.futures import ThreadPoolExecutor
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import requests
 from flask import Flask, Response, abort, jsonify, render_template, request, stream_with_context
@@ -195,10 +195,20 @@ def _safe_filename(name: str, default: str = "facebook-video.mp4") -> str:
     return (name[:120]) or default
 
 
+def _content_disposition(name: str) -> str:
+    safe = _safe_filename(name)
+    ascii_fallback = (
+        safe.encode("ascii", "replace").decode("ascii").replace("?", "_")
+        or "facebook-video.mp4"
+    )
+    encoded = quote(safe, safe="")
+    return f"attachment; filename=\"{ascii_fallback}\"; filename*=UTF-8''{encoded}"
+
+
 @app.route("/download")
 def download():
     url = request.args.get("url", "").strip()
-    filename = _safe_filename(request.args.get("filename", ""))
+    raw_name = request.args.get("filename", "")
 
     if not url or not url.startswith(("http://", "https://")) or not _is_fbcdn(url):
         abort(400, "Only fbcdn.net URLs are allowed.")
@@ -220,7 +230,7 @@ def download():
             upstream.close()
 
     headers = {
-        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Content-Disposition": _content_disposition(raw_name),
         "Content-Type": upstream.headers.get("Content-Type", "video/mp4"),
     }
     length = upstream.headers.get("Content-Length")
