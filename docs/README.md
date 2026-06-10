@@ -28,6 +28,7 @@ deployment, AWS infrastructure, CI/CD, and a future scalability plan.
 | 13 | AWS Infrastructure Design | [13-aws-infrastructure.md](./13-aws-infrastructure.md) |
 | 14 | CI/CD Pipeline | [14-cicd-pipeline.md](./14-cicd-pipeline.md) |
 | 15 | Future Scalability Plan | [15-scalability-plan.md](./15-scalability-plan.md) |
+| 16 | **Best-Option Decisions** (high traffic · easy to manage/move · easy to extend) | [16-best-option-decisions.md](./16-best-option-decisions.md) |
 
 ---
 
