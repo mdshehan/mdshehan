@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger, RequestMethod } from '@nestjs/common';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 // Make Prisma BigInt fields JSON-serializable (e.g. view_count).
@@ -10,6 +11,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
+  app.use(helmet({ contentSecurityPolicy: false })); // CSP is owned by the frontends
   app.setGlobalPrefix('v1', {
     exclude: [
       { path: 'healthz', method: RequestMethod.GET },

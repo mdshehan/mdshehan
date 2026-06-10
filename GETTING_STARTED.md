@@ -197,5 +197,7 @@ docs/                     full architecture (16 docs)
 5. ✅ `apps/web` Next.js storefront — homepage + product page (price comparison, history, JSON-LD, SEO)
 6. ✅ Storefront breadth: category pages + faceted filters, search UI + autocomplete, compare (2–4), brands, deals
 7. ✅ `apps/admin` dashboard — login, RBAC-gated nav, products/brands/prices/affiliate management, analytics
-8. Hardening: rate limiting, audit-log writes on mutations, sitemaps, CI workflow
-9. Workers: price-feed ingest, FX refresh, sitemap generation (BullMQ)
+8. ✅ Hardening: global + auth rate limiting (Throttler), helmet headers, automatic audit logs on
+   all admin mutations (+ `/v1/admin/activity-logs` viewer), `robots.txt` + `sitemap.xml`,
+   GitHub Actions CI (build, typecheck, prisma validate)
+9. Workers: price-feed ingest, FX refresh, sitemap sharding (BullMQ)
