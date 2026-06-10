@@ -69,7 +69,7 @@ async function main() {
     });
   }
 
-  const groups = ['product', 'brand', 'category', 'content', 'ad', 'affiliate', 'seo', 'user', 'setting'];
+  const groups = ['product', 'brand', 'category', 'price', 'store', 'content', 'ad', 'affiliate', 'seo', 'user', 'setting'];
   const actions = ['view', 'create', 'update', 'delete'];
   for (const g of groups) {
     for (const a of actions) {

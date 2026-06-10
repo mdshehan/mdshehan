@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, RequestMethod } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 // Make Prisma BigInt fields JSON-serializable (e.g. view_count).
@@ -10,7 +10,13 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
-  app.setGlobalPrefix('v1', { exclude: ['healthz', 'readyz'] });
+  app.setGlobalPrefix('v1', {
+    exclude: [
+      { path: 'healthz', method: RequestMethod.GET },
+      { path: 'readyz', method: RequestMethod.GET },
+      { path: 'go/:code', method: RequestMethod.GET }, // affiliate short links live at the root
+    ],
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.enableShutdownHooks();
 

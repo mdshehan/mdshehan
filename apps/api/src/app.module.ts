@@ -4,6 +4,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { HealthController } from './health/health.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
+import { PricingModule } from './modules/pricing/pricing.module';
+import { AffiliateModule } from './modules/affiliate/affiliate.module';
 import { LocalizationModule } from './modules/localization/localization.module';
 
 @Module({
@@ -12,6 +14,8 @@ import { LocalizationModule } from './modules/localization/localization.module';
     PrismaModule,
     AuthModule,
     CatalogModule,
+    PricingModule,
+    AffiliateModule,
     LocalizationModule,
   ],
   controllers: [HealthController],

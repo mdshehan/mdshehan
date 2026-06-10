@@ -420,6 +420,45 @@ model AffiliateLink {
   @@map("affiliate_links")
 }
 
+/// Append-only price time-series. Partitioned monthly via raw SQL in production
+/// (database/schema.sql); modeled here as a flat table for the app layer.
+model PriceHistory {
+  id           BigInt             @id @default(autoincrement())
+  productId    String             @map("product_id")
+  variantId    String?            @map("variant_id")
+  storeId      String             @map("store_id")
+  countryId    String             @map("country_id")
+  price        Decimal            @db.Decimal(14, 2)
+  priceUsd     Decimal            @map("price_usd") @db.Decimal(14, 2)
+  availability AvailabilityStatus
+  recordedAt   DateTime           @default(now()) @map("recorded_at")
+
+  @@index([productId, recordedAt])
+  @@map("price_history")
+}
+
+/// High-volume affiliate click events. Partitioned + offloaded to ClickHouse at
+/// scale; flat table here. IPs are stored hashed (privacy).
+model AffiliateClick {
+  id              BigInt   @id @default(autoincrement())
+  affiliateLinkId String   @map("affiliate_link_id")
+  productId       String?  @map("product_id")
+  storeId         String?  @map("store_id")
+  countryId       String?  @map("country_id")
+  userId          String?  @map("user_id")
+  sessionId       String?  @map("session_id")
+  device          String   @default("all")
+  referrer        String?
+  ipHash          String?  @map("ip_hash")
+  userAgent       String?  @map("user_agent")
+  revenueUsd      Decimal  @default(0) @map("revenue_usd") @db.Decimal(14, 4)
+  converted       Boolean  @default(false)
+  clickedAt       DateTime @default(now()) @map("clicked_at")
+
+  @@index([affiliateLinkId, clickedAt])
+  @@map("affiliate_clicks")
+}
+
 // ----------------------------------------------------------------------------
 // REVIEWS & CONTENT
 // ----------------------------------------------------------------------------

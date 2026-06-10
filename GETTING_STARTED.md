@@ -79,6 +79,40 @@ curl -i -X POST http://localhost:4000/v1/admin/brands -d '{}'
 `/v1/admin/products`, `/v1/admin/brands`, `/v1/admin/categories` — `POST` / `PATCH /:id` /
 `DELETE /:id` (soft delete), each guarded by `<group>.<action>` permission scopes.
 
+## 7. Pricing & Affiliate
+
+### Pricing (admin offers + public history)
+```bash
+# Upsert an offer (price.create) — records price_history + recomputes best price
+curl -X POST http://localhost:4000/v1/admin/prices \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"productId":"<uuid>","storeId":"<uuid>","countryId":"<uuid>","currencyId":"<uuid>","price":1149.00}'
+
+# Public price-history (powers the chart)
+curl "http://localhost:4000/v1/products/samsung-galaxy-s25-ultra/price-history?days=180"
+```
+- `POST /v1/admin/prices` (`price.create`) · `PATCH /v1/admin/prices/:id` (`price.update`) ·
+  `DELETE /v1/admin/prices/:id` (`price.delete`)
+- Every price change appends a `price_history` row and recomputes `products.min_price_usd`.
+- `price_usd` is normalized from the offer currency's `usd_rate` for cross-store sorting.
+
+### Affiliate (links + redirect + analytics)
+```bash
+# Create an affiliate link (auto short code if omitted)
+curl -X POST http://localhost:4000/v1/admin/affiliate-links \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"storeId":"<uuid>","targetUrl":"https://amazon.com/dp/XYZ","affiliateTag":"ggph-20"}'
+
+# Public redirect — 302 to merchant, click tracked asynchronously
+curl -i http://localhost:4000/go/<shortCode>
+
+# Analytics: clicks, revenue, EPC, conversion, breakdowns (affiliate.view)
+curl "http://localhost:4000/v1/admin/affiliate/analytics?days=30" -H "Authorization: Bearer $TOKEN"
+```
+- `GET /go/:code` lives at the **root** (excluded from `/v1`): resolve → **302** immediately →
+  append `tag`/`subid` → record the click **fire-and-forget** (never blocks the redirect).
+- Admin link CRUD under `/v1/admin/affiliate-links` (`affiliate.*` scopes).
+
 ## Workspace layout (current)
 ```
 apps/api/                 NestJS API
@@ -95,7 +129,7 @@ docs/                     full architecture (16 docs)
 ## Next steps (roadmap)
 1. ✅ Monorepo + DB layer + seed
 2. ✅ Auth (JWT + rotating refresh sessions) + RBAC permissions guard + catalog write endpoints
-3. Pricing/affiliate modules + `/go/:code` redirect + click tracking
+3. ✅ Pricing (offers + price_history) + Affiliate (links, `/go/:code` redirect, click tracking, analytics)
 4. Search module (Meilisearch indexer + autocomplete)
 5. `apps/web` Next.js storefront consuming the API (product page first)
 6. `apps/admin` dashboard
