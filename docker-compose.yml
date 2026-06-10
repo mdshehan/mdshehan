@@ -1,0 +1,58 @@
+# Local development stack — portable, open components (see docs/16-best-option-decisions.md)
+# Bring up:  docker compose up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ggph-postgres
+    environment:
+      POSTGRES_USER: ggph
+      POSTGRES_PASSWORD: ggph
+      POSTGRES_DB: ggph
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ggph"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ggph-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.10
+    container_name: ggph-meili
+    environment:
+      MEILI_MASTER_KEY: ggph_dev_master_key
+      MEILI_ENV: development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meilidata:/meili_data
+
+  minio:
+    image: minio/minio:latest
+    container_name: ggph-minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ggph
+      MINIO_ROOT_PASSWORD: ggph_secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+volumes:
+  pgdata:
+  redisdata:
+  meilidata:
+  miniodata:

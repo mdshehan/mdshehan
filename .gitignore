@@ -7,3 +7,15 @@ venv/
 *.log
 .idea/
 .vscode/
+
+# Node / monorepo
+node_modules/
+.pnpm-store/
+dist/
+.next/
+.turbo/
+coverage/
+*.tsbuildinfo
+# Prisma generated client
+apps/*/node_modules/
+packages/*/node_modules/
