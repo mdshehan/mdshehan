@@ -168,6 +168,24 @@ Sign in with the seeded super-admin (**admin@gadgethub.com / Admin123!**).
   Dev note: tokens are in localStorage for simplicity — move the refresh token to an httpOnly
   cookie for production.
 
+## 11. Run the background workers (BullMQ)
+```bash
+pnpm --filter @ggph/workers dev   # connects to Redis, registers schedulers
+
+# Enqueue jobs manually (dev):
+pnpm --filter @ggph/workers enqueue fx        # refresh FX rates now
+pnpm --filter @ggph/workers enqueue sitemap   # rebuild sharded sitemaps
+pnpm --filter @ggph/workers enqueue price samsung-galaxy-s25-ultra amazon US USD 1149
+```
+- **price-ingest** — upserts a normalized merchant feed row → appends price history → recomputes
+  best price. Idempotent (unique offer key + append-only history); concurrency-tunable.
+- **fx-rates** — hourly (cron `0 * * * *`); refreshes `currencies.usd_rate` from `FX_API_URL`
+  with a static fallback so prices never zero out.
+- **sitemap** — nightly (cron `0 3 * * *`); keyset-paginates published products into sharded
+  `products-{n}.xml` (50k each) + a sitemap index → `SITEMAP_OUT_DIR` (S3 in production).
+- Repeatable jobs are idempotent by `jobId`; graceful SIGTERM drain. Scales horizontally on
+  Redis queue depth (KEDA in prod, per doc 12).
+
 ## Workspace layout (current)
 ```
 apps/api/                 NestJS API
@@ -179,14 +197,25 @@ apps/api/                 NestJS API
     modules/pricing/      offers · price_history · public price-history
     modules/affiliate/    links · /go/:code redirect · click tracking · analytics
     modules/search/       Meilisearch index · /v1/search · autocomplete · indexer
+    modules/stores/       admin store management
     modules/localization/ countries · currencies · languages · /config
+    modules/audit/        activity-logs viewer (+ global audit interceptor)
+    common/               guards · pipes · interceptors · decorators · events
     health/               /healthz · /readyz
 apps/web/                 Next.js storefront (App Router, Tailwind)
-  src/app/                homepage · products/[slug] · layout
-  src/components/         header · footer · product-card · price/spec tables · chart
+  src/app/                home · products/[slug] · category · search · compare · brands · deals
+                         · robots.txt · sitemap.xml
+  src/components/         header · footer · product-card · price/spec tables · chart · filters · search box
   src/lib/                typed api client · jsonld · format helpers
+apps/admin/               Next.js admin dashboard (RBAC-gated)
+  src/app/(dashboard)/    overview · products · brands · prices · affiliate
+  src/lib/, components/   auth'd api client (auto-refresh) · AuthProvider
+apps/workers/             BullMQ workers
+  src/jobs/               price-ingest · fx-rates · sitemap
+  src/queues.ts, index.ts queues + worker bootstrap + schedulers
 database/schema.sql       canonical reference DDL
 docs/                     full architecture (16 docs)
+.github/workflows/ci.yml  build · typecheck · prisma validate
 ```
 
 ## Next steps (roadmap)
@@ -200,4 +229,8 @@ docs/                     full architecture (16 docs)
 8. ✅ Hardening: global + auth rate limiting (Throttler), helmet headers, automatic audit logs on
    all admin mutations (+ `/v1/admin/activity-logs` viewer), `robots.txt` + `sitemap.xml`,
    GitHub Actions CI (build, typecheck, prisma validate)
-9. Workers: price-feed ingest, FX refresh, sitemap sharding (BullMQ)
+9. ✅ Workers: price-feed ingest, FX refresh (hourly), sharded sitemap generation (nightly) — BullMQ
+
+The backend (API + workers) and both frontends (storefront + admin) now run end-to-end against
+the portable stack. From here it's depth — more admin modules (ads, SEO, content, layout builder),
+the remaining storefront pages, Redis response caching, and the Terraform/K8s infra from `docs/`.

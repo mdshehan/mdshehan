@@ -19,3 +19,5 @@ coverage/
 # Prisma generated client
 apps/*/node_modules/
 packages/*/node_modules/
+# Worker output
+apps/workers/generated-sitemaps/
