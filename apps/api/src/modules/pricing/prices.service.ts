@@ -1,11 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, AvailabilityStatus } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePriceDto, UpdatePriceDto } from './prices.dto';
+import { CatalogEvents } from '../../common/events/catalog.events';
 
 @Injectable()
 export class PricesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly events: EventEmitter2,
+  ) {}
 
   /** Create or replace an offer; records price history + recomputes best price. */
   async upsertOffer(dto: CreatePriceDto) {
@@ -143,6 +148,8 @@ export class PricesService {
       where: { id: productId },
       data: { minPriceUsd: agg._min.priceUsd ?? null },
     });
+    // Best price changed → refresh search doc (and, later, caches/ISR).
+    this.events.emit(CatalogEvents.ProductChanged, { productId });
   }
 
   private toUsd(price: number, usdRate: Prisma.Decimal): number {

@@ -113,6 +113,24 @@ curl "http://localhost:4000/v1/admin/affiliate/analytics?days=30" -H "Authorizat
   append `tag`/`subid` → record the click **fire-and-forget** (never blocks the redirect).
 - Admin link CRUD under `/v1/admin/affiliate-links` (`affiliate.*` scopes).
 
+## 8. Search (Meilisearch + Postgres fallback)
+```bash
+# Full search with filters + facets
+curl "http://localhost:4000/v1/search?q=galaxy&brand=samsung&price_max=1300&sort=price"
+
+# Typeahead autocomplete (products + brand/category suggestions)
+curl "http://localhost:4000/v1/search/autocomplete?q=gal"
+
+# Rebuild the index (product.update scope)
+curl -X POST http://localhost:4000/v1/admin/search/reindex -H "Authorization: Bearer $TOKEN"
+```
+- Products are indexed in **Meilisearch** (filterable: brand, category, ram, storage, priceUsd,
+  availability; sortable: price, rating, release).
+- The indexer is **event-driven**: catalog/price writes emit `product.changed` / `product.deleted`
+  → the index updates automatically (decoupled via Nest `EventEmitter`).
+- **Graceful degradation**: if Meilisearch is unavailable, search/autocomplete transparently fall
+  back to a Postgres query (`engine` field in the response shows which path served it).
+
 ## Workspace layout (current)
 ```
 apps/api/                 NestJS API
@@ -130,6 +148,6 @@ docs/                     full architecture (16 docs)
 1. ✅ Monorepo + DB layer + seed
 2. ✅ Auth (JWT + rotating refresh sessions) + RBAC permissions guard + catalog write endpoints
 3. ✅ Pricing (offers + price_history) + Affiliate (links, `/go/:code` redirect, click tracking, analytics)
-4. Search module (Meilisearch indexer + autocomplete)
+4. ✅ Search (Meilisearch index, faceted `/v1/search`, autocomplete, event-driven indexer, PG fallback)
 5. `apps/web` Next.js storefront consuming the API (product page first)
 6. `apps/admin` dashboard
