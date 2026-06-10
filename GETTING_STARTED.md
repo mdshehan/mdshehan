@@ -131,15 +131,35 @@ curl -X POST http://localhost:4000/v1/admin/search/reindex -H "Authorization: Be
 - **Graceful degradation**: if Meilisearch is unavailable, search/autocomplete transparently fall
   back to a Postgres query (`engine` field in the response shows which path served it).
 
+## 9. Run the storefront (Next.js)
+```bash
+pnpm --filter @ggph/web dev      # http://localhost:3000 (reads the API)
+```
+- **Homepage** (`/`) — hero, trending, latest launches, popular brands (ISR, 15 min).
+- **Product page** (`/products/:slug`) — gallery, best-price CTA, price-comparison table,
+  price-history chart, full specs, pros/cons. SSR/ISR (5 min) with **JSON-LD** (Product +
+  AggregateOffer + AggregateRating + BreadcrumbList) and SEO `generateMetadata`.
+- Dark/light theme (no-flash, persisted), Tailwind design tokens, accessible semantic markup.
+- **Resilient fetch**: pages render with empty-state fallbacks if the API is down, so the build
+  always succeeds; affiliate "Buy" buttons route through `/go/:code` with `rel="nofollow sponsored"`.
+
 ## Workspace layout (current)
 ```
 apps/api/                 NestJS API
   prisma/schema.prisma    data layer (mirrors database/schema.sql)
   prisma/seed.ts          seed data
   src/
-    modules/catalog/      products · brands · categories (vertical slice)
+    modules/auth/         JWT + RBAC (guards, AccessService, sessions)
+    modules/catalog/      products · brands · categories (read + admin write)
+    modules/pricing/      offers · price_history · public price-history
+    modules/affiliate/    links · /go/:code redirect · click tracking · analytics
+    modules/search/       Meilisearch index · /v1/search · autocomplete · indexer
     modules/localization/ countries · currencies · languages · /config
     health/               /healthz · /readyz
+apps/web/                 Next.js storefront (App Router, Tailwind)
+  src/app/                homepage · products/[slug] · layout
+  src/components/         header · footer · product-card · price/spec tables · chart
+  src/lib/                typed api client · jsonld · format helpers
 database/schema.sql       canonical reference DDL
 docs/                     full architecture (16 docs)
 ```
@@ -149,5 +169,6 @@ docs/                     full architecture (16 docs)
 2. ✅ Auth (JWT + rotating refresh sessions) + RBAC permissions guard + catalog write endpoints
 3. ✅ Pricing (offers + price_history) + Affiliate (links, `/go/:code` redirect, click tracking, analytics)
 4. ✅ Search (Meilisearch index, faceted `/v1/search`, autocomplete, event-driven indexer, PG fallback)
-5. `apps/web` Next.js storefront consuming the API (product page first)
-6. `apps/admin` dashboard
+5. ✅ `apps/web` Next.js storefront — homepage + product page (price comparison, history, JSON-LD, SEO)
+6. Storefront breadth: category/listing + faceted filters, search UI, comparison page
+7. `apps/admin` dashboard
