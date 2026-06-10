@@ -8,6 +8,7 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 import { PricingModule } from './modules/pricing/pricing.module';
 import { AffiliateModule } from './modules/affiliate/affiliate.module';
 import { SearchModule } from './modules/search/search.module';
+import { StoresModule } from './modules/stores/stores.module';
 import { LocalizationModule } from './modules/localization/localization.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { LocalizationModule } from './modules/localization/localization.module';
     PricingModule,
     AffiliateModule,
     SearchModule,
+    StoresModule,
     LocalizationModule,
   ],
   controllers: [HealthController],

@@ -96,6 +96,19 @@ export class ProductsService {
     };
   }
 
+  /** Admin listing: includes drafts/archived (everything not soft-deleted). */
+  listAdmin(q?: string, limit = 50) {
+    return this.prisma.product.findMany({
+      where: {
+        deletedAt: null,
+        ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
+      },
+      take: Math.min(limit, 200),
+      orderBy: { updatedAt: 'desc' },
+      include: { brand: true, category: true },
+    });
+  }
+
   async create(dto: CreateProductDto) {
     const exists = await this.prisma.product.findUnique({ where: { slug: dto.slug } });
     if (exists) throw new ConflictException(`Slug '${dto.slug}' already in use`);

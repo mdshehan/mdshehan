@@ -2,9 +2,11 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
@@ -23,6 +25,12 @@ import { PermissionsGuard } from '../../auth/guards/permissions.guard';
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ProductsAdminController {
   constructor(private readonly products: ProductsService) {}
+
+  @Get()
+  @Permissions('product.view')
+  list(@Query('q') q?: string, @Query('limit') limit?: string) {
+    return this.products.listAdmin(q, limit ? Number(limit) : undefined);
+  }
 
   @Post()
   @Permissions('product.create')

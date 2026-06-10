@@ -151,6 +151,23 @@ pnpm --filter @ggph/web dev      # http://localhost:3000 (reads the API)
   difference highlighting, best price, rating, pros/cons, buy buttons; sticky label column.
 - **Brand pages** (`/brands/:slug`) and **Deals** (`/deals`).
 
+## 10. Run the admin dashboard
+```bash
+pnpm --filter @ggph/admin dev   # http://localhost:3001
+```
+Sign in with the seeded super-admin (**admin@gadgethub.com / Admin123!**).
+- **Overview** — affiliate KPIs (clicks, revenue, EPC, conversion rate) + device/store breakdowns.
+- **Products** — searchable list (includes drafts), create form, soft-delete.
+- **Brands** — list + inline create + soft-delete.
+- **Prices** — offer upsert form (product/store/country/currency selects); each save appends
+  price history and recomputes the product's best price + search index.
+- **Affiliate** — link CRUD with live `/go/<code>` short links.
+- Navigation and actions are **permission-gated client-side** (`can('product.create')` etc.) and
+  enforced server-side by the RBAC guards — the UI hides what the API would reject anyway.
+- Auth: login stores the JWT pair; `authFetch` auto-refreshes on 401 (rotating refresh tokens).
+  Dev note: tokens are in localStorage for simplicity — move the refresh token to an httpOnly
+  cookie for production.
+
 ## Workspace layout (current)
 ```
 apps/api/                 NestJS API
@@ -179,4 +196,6 @@ docs/                     full architecture (16 docs)
 4. ✅ Search (Meilisearch index, faceted `/v1/search`, autocomplete, event-driven indexer, PG fallback)
 5. ✅ `apps/web` Next.js storefront — homepage + product page (price comparison, history, JSON-LD, SEO)
 6. ✅ Storefront breadth: category pages + faceted filters, search UI + autocomplete, compare (2–4), brands, deals
-7. `apps/admin` dashboard
+7. ✅ `apps/admin` dashboard — login, RBAC-gated nav, products/brands/prices/affiliate management, analytics
+8. Hardening: rate limiting, audit-log writes on mutations, sitemaps, CI workflow
+9. Workers: price-feed ingest, FX refresh, sitemap generation (BullMQ)
