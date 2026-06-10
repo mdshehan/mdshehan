@@ -75,3 +75,29 @@ export interface Paged<T> {
   data: T[];
   pageInfo: { endCursor: string | null; hasNextPage: boolean };
 }
+
+/** A search hit — Meilisearch doc shape OR a full product row (Postgres fallback). */
+export interface SearchHit {
+  id: string;
+  name: string;
+  slug: string;
+  // Meili doc fields
+  brandName?: string;
+  categorySlug?: string;
+  priceUsd?: number | null;
+  ratingAvg?: string | number;
+  // PG fallback fields
+  brand?: Brand;
+  minPriceUsd?: string | number | null;
+}
+
+export interface SearchResult {
+  engine: 'meilisearch' | 'postgres';
+  total: number;
+  hits: SearchHit[];
+  facets: Record<string, Record<string, number>>;
+}
+
+export interface BrandDetail extends Brand {
+  products: ProductListItem[];
+}

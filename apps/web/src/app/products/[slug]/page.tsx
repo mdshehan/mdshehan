@@ -94,6 +94,12 @@ export default async function ProductPage({ params }: Props) {
               >
                 Buy at {best.store.name} →
               </a>
+              <Link
+                href={`/compare?p=${product.slug}`}
+                className="mt-2 inline-flex w-full justify-center rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted"
+              >
+                ⚖️ Compare with another gadget
+              </Link>
             </div>
           )}
 

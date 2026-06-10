@@ -142,6 +142,14 @@ pnpm --filter @ggph/web dev      # http://localhost:3000 (reads the API)
 - Dark/light theme (no-flash, persisted), Tailwind design tokens, accessible semantic markup.
 - **Resilient fetch**: pages render with empty-state fallbacks if the API is down, so the build
   always succeeds; affiliate "Buy" buttons route through `/go/:code` with `rel="nofollow sponsored"`.
+- **Category pages** (`/category/:slug`) — faceted filters (brand, price, RAM, storage, sort) as a
+  plain GET form: zero client JS, filters live in the URL (shareable + crawlable). Facet counts
+  come from the search engine.
+- **Search** (`/search`) — client autocomplete box (debounced, products/brands/categories) +
+  server-rendered results with the same facet sidebar; `noindex` per the SEO architecture.
+- **Compare** (`/compare?p=slug-a,slug-b[,c,d]`) — 2–4 products side by side: spec matrix with
+  difference highlighting, best price, rating, pros/cons, buy buttons; sticky label column.
+- **Brand pages** (`/brands/:slug`) and **Deals** (`/deals`).
 
 ## Workspace layout (current)
 ```
@@ -170,5 +178,5 @@ docs/                     full architecture (16 docs)
 3. ✅ Pricing (offers + price_history) + Affiliate (links, `/go/:code` redirect, click tracking, analytics)
 4. ✅ Search (Meilisearch index, faceted `/v1/search`, autocomplete, event-driven indexer, PG fallback)
 5. ✅ `apps/web` Next.js storefront — homepage + product page (price comparison, history, JSON-LD, SEO)
-6. Storefront breadth: category/listing + faceted filters, search UI, comparison page
+6. ✅ Storefront breadth: category pages + faceted filters, search UI + autocomplete, compare (2–4), brands, deals
 7. `apps/admin` dashboard

@@ -5,6 +5,8 @@ import type {
   PriceComparison,
   PriceHistory,
   Brand,
+  BrandDetail,
+  SearchResult,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
@@ -52,6 +54,17 @@ export const api = {
     }),
 
   listBrands: () => getJson<Brand[]>(`/brands`, REVALIDATE.list, []),
+
+  getBrand: (slug: string) =>
+    getJson<BrandDetail | null>(`/brands/${slug}`, REVALIDATE.list, null),
+
+  search: (params: URLSearchParams) =>
+    getJson<SearchResult>(`/search?${params.toString()}`, REVALIDATE.list, {
+      engine: 'postgres',
+      total: 0,
+      hits: [],
+      facets: {},
+    }),
 };
 
 export { API_URL };
