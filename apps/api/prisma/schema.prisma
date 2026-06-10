@@ -78,6 +78,7 @@ model Permission {
   description String?
   createdAt   DateTime         @default(now()) @map("created_at")
   roles       RolePermission[]
+  users       UserPermission[]
 
   @@map("permissions")
 }
@@ -107,12 +108,40 @@ model User {
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
   deletedAt       DateTime?  @map("deleted_at")
-  country         Country?   @relation(fields: [countryId], references: [id])
+  country         Country?         @relation(fields: [countryId], references: [id])
   roles           UserRole[]
+  permissions     UserPermission[]
+  sessions        AuthSession[]
   reviews         Review[]
 
   @@index([isActive])
   @@map("users")
+}
+
+model UserPermission {
+  userId       String     @map("user_id")
+  permissionId String     @map("permission_id")
+  effect       String     @default("allow") // allow | deny
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permissionId])
+  @@map("user_permissions")
+}
+
+model AuthSession {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  refreshTokenHash String    @map("refresh_token_hash")
+  userAgent        String?   @map("user_agent")
+  ip               String?
+  expiresAt        DateTime  @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_sessions")
 }
 
 model UserRole {

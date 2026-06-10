@@ -4,6 +4,7 @@
  * so the API returns real data end-to-end immediately after `db:seed`.
  */
 import { PrismaClient, ProductStatus, AvailabilityStatus } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -90,6 +91,27 @@ async function main() {
       create: { roleId: superAdmin.id, permissionId: p.id },
     });
   }
+
+  // --- Seed super-admin user (dev credentials) ---
+  const adminEmail = 'admin@gadgethub.com';
+  const adminUser = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {},
+    create: {
+      email: adminEmail,
+      fullName: 'Platform Admin',
+      isStaff: true,
+      isActive: true,
+      emailVerifiedAt: new Date(),
+      passwordHash: await bcrypt.hash('Admin123!', 12),
+    },
+  });
+  await prisma.userRole.upsert({
+    where: { userId_roleId: { userId: adminUser.id, roleId: superAdmin.id } },
+    update: {},
+    create: { userId: adminUser.id, roleId: superAdmin.id },
+  });
+  console.log(`👤 Admin login: ${adminEmail} / Admin123!  (change in production)`);
 
   // --- Spec dictionary ---
   const displayGroup = await prisma.specificationGroup.upsert({

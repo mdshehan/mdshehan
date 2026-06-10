@@ -33,7 +33,7 @@ pnpm dev                        # or: pnpm --filter @ggph/api dev
 ```
 API on **http://localhost:4000** (global prefix `/v1`).
 
-## 5. Try it
+## 5. Try it — public reads
 ```bash
 curl http://localhost:4000/healthz
 curl http://localhost:4000/readyz
@@ -44,6 +44,40 @@ curl http://localhost:4000/v1/products
 curl http://localhost:4000/v1/products/samsung-galaxy-s25-ultra
 curl "http://localhost:4000/v1/products/samsung-galaxy-s25-ultra/prices?country=US"
 ```
+
+## 6. Try it — auth + RBAC-gated writes
+Seed creates a super-admin: **admin@gadgethub.com / Admin123!** (change in production).
+
+```bash
+# Log in → get accessToken + refreshToken
+TOKEN=$(curl -s -X POST http://localhost:4000/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@gadgethub.com","password":"Admin123!"}' | jq -r .accessToken)
+
+# Who am I (roles + effective permissions)
+curl http://localhost:4000/v1/auth/me -H "Authorization: Bearer $TOKEN"
+
+# Create a brand (requires brand.create permission)
+curl -X POST http://localhost:4000/v1/admin/brands \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Google","slug":"google","websiteUrl":"https://store.google.com"}'
+
+# Without a token → 401; with a token lacking the scope → 403
+curl -i -X POST http://localhost:4000/v1/admin/brands -d '{}'
+```
+
+### Auth endpoints
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/v1/auth/register` | email + password (≥8) |
+| POST | `/v1/auth/login` | → access (15m) + refresh (rotating) |
+| POST | `/v1/auth/refresh` | rotate tokens; reuse-detection revokes family |
+| POST | `/v1/auth/logout` | revoke session |
+| GET | `/v1/auth/me` | current user + permissions (Bearer) |
+
+### RBAC-gated admin writes
+`/v1/admin/products`, `/v1/admin/brands`, `/v1/admin/categories` — `POST` / `PATCH /:id` /
+`DELETE /:id` (soft delete), each guarded by `<group>.<action>` permission scopes.
 
 ## Workspace layout (current)
 ```
@@ -59,8 +93,8 @@ docs/                     full architecture (16 docs)
 ```
 
 ## Next steps (roadmap)
-1. ✅ Monorepo + DB layer + seed (this step)
-2. Catalog write endpoints + RBAC auth module (JWT + permissions guard)
+1. ✅ Monorepo + DB layer + seed
+2. ✅ Auth (JWT + rotating refresh sessions) + RBAC permissions guard + catalog write endpoints
 3. Pricing/affiliate modules + `/go/:code` redirect + click tracking
 4. Search module (Meilisearch indexer + autocomplete)
 5. `apps/web` Next.js storefront consuming the API (product page first)

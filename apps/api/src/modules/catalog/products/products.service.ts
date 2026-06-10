@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { CreateProductDto, UpdateProductDto } from './products.dto';
 
 export interface ListProductsParams {
   brand?: string;
@@ -88,6 +89,39 @@ export class ProductsService {
       bestPrice: offers[0] ?? null,
       offers,
     };
+  }
+
+  async create(dto: CreateProductDto) {
+    const exists = await this.prisma.product.findUnique({ where: { slug: dto.slug } });
+    if (exists) throw new ConflictException(`Slug '${dto.slug}' already in use`);
+    return this.prisma.product.create({
+      data: {
+        ...dto,
+        specs: dto.specs as Prisma.InputJsonValue,
+        publishedAt: dto.status === 'published' ? new Date() : null,
+      },
+    });
+  }
+
+  async update(id: string, dto: UpdateProductDto) {
+    await this.ensureExists(id);
+    const { specs, ...rest } = dto;
+    const data: Prisma.ProductUncheckedUpdateInput = { ...rest };
+    if (specs !== undefined) data.specs = specs as Prisma.InputJsonValue;
+    if (dto.status === 'published') data.publishedAt = new Date();
+    return this.prisma.product.update({ where: { id }, data });
+  }
+
+  /** Soft delete. */
+  async remove(id: string) {
+    await this.ensureExists(id);
+    await this.prisma.product.update({ where: { id }, data: { deletedAt: new Date() } });
+    return { success: true };
+  }
+
+  private async ensureExists(id: string) {
+    const found = await this.prisma.product.findFirst({ where: { id, deletedAt: null } });
+    if (!found) throw new NotFoundException(`Product '${id}' not found`);
   }
 
   private parseSort(sort?: string): Prisma.ProductOrderByWithRelationInput[] {
